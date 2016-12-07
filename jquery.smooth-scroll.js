@@ -1,5 +1,5 @@
 /*!
- * jQuery Smooth Scroll - v2.0.1 - 2016-09-07
+ * jQuery Smooth Scroll - v2.0.2 - 2016-12-07
  * https://github.com/kswedberg/jquery-smooth-scroll
  * Copyright (c) 2016 Karl Swedberg
  * Licensed MIT
@@ -18,7 +18,7 @@
   }
 }(function($) {
 
-  var version = '2.0.1';
+  var version = '2.0.2';
   var optionOverrides = {};
   var defaults = {
     exclude: [],
@@ -172,9 +172,20 @@
         var linkPath = $.smoothScroll.filterPath(link.pathname);
         var hostMatch = location.hostname === link.hostname || !link.hostname;
         var pathMatch = thisOpts.scrollTarget || (linkPath === locationPath);
-        var thisHash = escapeSelector(link.hash);
+        var thisHash = link.hash;
+        var thisHashEl;
 
-        if (thisHash && !$(thisHash).length) {
+        if (thisHash) {
+          try {
+            thisHashEl = $(thisHash);
+          } catch (e) {
+            thisHashEl = $('a[name="' + thisHash.substring(1) + '"]');
+          }
+        } else {
+          thisHashEl = $('#someelementhatwillneverexist');
+        }
+
+        if (thisHash && !thisHashEl.length) {
           include = false;
         }
 
@@ -226,7 +237,7 @@
     if (options === 'options' && typeof px === 'object') {
       return $.extend(optionOverrides, px);
     }
-    var opts, $scroller, scrollTargetOffset, speed, delta;
+    var opts, $scroller, scrollTargetOffset, scrollTargetElement, speed, delta;
     var scrollerOffset = 0;
     var offPos = 'offset';
     var scrollDir = 'scrollTop';
@@ -263,10 +274,21 @@
     // beforeScroll callback function must fire before calculating offset
     opts.beforeScroll.call($scroller, opts);
 
+    if (opts.scrollTarget) {
+      try {
+        scrollTargetElement = $(opts.scrollTarget);
+      } catch (e) {
+        // catch syntax error from invalid selectors
+        scrollTargetElement = $('a[name="' + opts.scrollTarget.substring(1) + '"]');
+      }
+    } else {
+      scrollTargetElement = $('#someelementhatwillneverexist');
+    }
+
     scrollTargetOffset = (typeof options === 'number') ? options :
                           px ||
-                          ($(opts.scrollTarget)[offPos]() &&
-                          $(opts.scrollTarget)[offPos]()[opts.direction]) ||
+                          (scrollTargetElement[offPos]() &&
+                          scrollTargetElement[offPos]()[opts.direction]) ||
                           0;
 
     aniProps[scrollDir] = scrollTargetOffset + scrollerOffset + opts.offset;
